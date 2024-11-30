@@ -2,43 +2,71 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'name', 'surname', 'patronymic', 'login', 'password', 'birthday', 'email', 'telephone', 'role_id'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
+    // Список полей для преобразования
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed', // Хэширование пароля
+        ];
+    }
+
+    // Прячем поля, которые не должны быть возвращены в ответах
     protected $hidden = [
-        'password',
-        'remember_token',
+        'password', 'remember_token', // Убираем 'api_token' здесь, так как токены будут храниться в таблице personal_access_tokens
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            // Пример: задаем роль по умолчанию, если не указана
+            if (!$user->role_id) {
+                $user->role_id = 2; // Устанавливаем роль по умолчанию, например, роль с id = 1
+            }
+        });
+    }
+
+    // Аксессор для пароля, чтобы всегда хэшировать его при сохранении
+    public function setPasswordAttribute($value)
+    {
+        $this->attributes['password'] = Hash::make($value);
+    }
+
+    // Отношение с ролью пользователя
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    // Отношение с адресами
+    public function address()
+    {
+        return $this->hasOne(Address::class);
+    }
+
+    // Отношение с заказами
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    // Отношение с корзинами
+    public function carts()
+    {
+        return $this->hasMany(Cart::class);
+    }
 }
