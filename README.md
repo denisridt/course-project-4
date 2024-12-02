@@ -3,11 +3,11 @@
 1. Склонируйте репозиторий
 ```shell
 cd domains
-git clone https://github.com/denisridt/course-projec-4
+git clone https://github.com/denisridt/course-project-4
 ```
 2. Перейдите в папку с проектом и установите composer-зависимости
 ```shell
-cd course-projec-4
+cd course-project-4
 composer install
 ```
 3. Скопируйте файл .env.example в .env
@@ -23,7 +23,7 @@ php artisan key:generate
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=course-projec-4
+DB_DATABASE=course-project-4
 DB_USERNAME=root
 DB_PASSWORD=
 

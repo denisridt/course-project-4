@@ -17,9 +17,7 @@ class CheckoutRequest extends ApiRequest
     public function rules()
     {
         return [
-            'address' => 'required|string|min:10',
-
-
+            'address' => 'string|min:10',
         ];
     }
 
