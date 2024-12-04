@@ -51,11 +51,31 @@ class AuthController extends Controller
 
     public function register(UserCreateRequest $request)
     {
-        // Создаем нового пользователя с предоставленными данными
-        $user = new User($request->all());
-        $user->save();
-        return response([
-            'message' => 'Регистрация прошла успешно'
-        ], 201);
+        // Проверка данных выполнена в UserCreateRequest
+
+        try {
+            // Создаем нового пользователя
+            $user = User::create([
+                'name'      => $request->input('name'),
+                'surname'   => $request->input('surname'),
+                'login'     => $request->input('login'),
+                'password'  => bcrypt($request->input('password')),
+                'email'     => $request->input('email'),
+                'telephone' => $request->input('telephone'),
+            ]);
+
+            return response()->json([
+                'message' => 'Регистрация прошла успешно.',
+                'user'    => $user,
+            ], 201);
+
+        } catch (\Exception $e) {
+            // Обработка ошибок
+            return response()->json([
+                'message' => 'Ошибка при регистрации.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
+
 }

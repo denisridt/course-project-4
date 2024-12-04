@@ -14,7 +14,11 @@ class AddressController extends Controller
 
         // Проверяем, авторизован ли пользователь
         if (!$user) {
-            return response()->json(['error' => 'Пользователь не авторизован'], 401);
+            return response()->json([
+                'error' => 'Пользователь не авторизован',
+                'message' => 'Для просмотра адреса нужно быть авторизованным.',
+                'code' => 401
+            ], 401);
         }
 
         // Жадная загрузка адреса
@@ -22,12 +26,18 @@ class AddressController extends Controller
 
         // Если адрес не найден, возвращаем ошибку
         if (!$user->address) {
-            return response()->json(['error' => 'Адрес не найден'], 404);
+            return response()->json([
+                'error' => 'Адрес не найден',
+                'message' => 'У вас еще нет сохраненного адреса.',
+                'code' => 404
+            ], 404);
         }
 
-        return response()->json(['address' => $user->address]);
+        return response()->json([
+            'message' => 'Адрес успешно найден',
+            'address' => $user->address
+        ]);
     }
-
 
     public function store(AddressRequest $request)
     {
@@ -50,6 +60,21 @@ class AddressController extends Controller
 
         $address->save(); // Сохраняем данные
 
-        return response()->json(['message' => 'Адрес успешно сохранен']);
+        // Возвращаем успешный ответ с подробностями
+        return response()->json([
+            'message' => $address->exists ? 'Адрес успешно обновлен' : 'Адрес успешно добавлен',
+            'address' => [
+                'city' => $address->city,
+                'street' => $address->street,
+                'house' => $address->house,
+                'floor' => $address->floor,
+                'apartment' => $address->apartment,
+                'entrance' => $address->entrance,
+                'intercom' => $address->intercom,
+                'comment' => $address->comment
+            ],
+            'details' => 'Ваш адрес был успешно сохранен или обновлен. Вы можете редактировать его в любое время.',
+            'code' => 200
+        ]);
     }
 }

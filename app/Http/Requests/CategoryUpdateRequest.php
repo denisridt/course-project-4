@@ -22,15 +22,18 @@ class CategoryUpdateRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'name'=>'required|string|min:1|max:255|unique:categories'
+            'name' => 'required|string|min:1|max:255|unique:categories,name,' . $this->route('id') // исключаем проверку уникальности для текущего ID
         ];
     }
+
     public function messages()
     {
         return [
+            'name.required' => 'Поле "Name" обязательно для заполнения.',
+            'name.string' => 'Поле "Name" должно быть строкой.',
             'name.max' => 'Поле "Name" не может содержать более :max символов.',
-            'name.min' => 'Поле "Name" должно содержать не менее :min символов.',
-            'name.unique' => 'Такой "name" уже существует.',
+            'name.min' => 'Поле "Name" должно содержать минимум :min символов.',
+            'name.unique' => 'Категория с таким названием уже существует. Пожалуйста, выберите другое.',
         ];
     }
 }

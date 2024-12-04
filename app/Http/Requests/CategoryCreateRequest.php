@@ -15,16 +15,17 @@ class CategoryCreateRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'name'=>'required|string|min:1|max:255|unique:categories',
+            'name' => 'required|string|min:1|max:255|unique:categories',
         ];
     }
-    public function messages()
+
+    public function messages(): array
     {
         return [
             'name.required' => 'Поле "Name" не может быть пустым.',
-            'name.max' => 'Поле "Name" не может содержать более :max символов.',
-            'name.min' => 'Поле "Name" должно содержать не менее :min символов.',
-            'name.unique' => 'Такой "name" уже существует.',
+            'name.max'      => 'Поле "Name" не может содержать более :max символов.',
+            'name.min'      => 'Поле "Name" должно содержать не менее :min символов.',
+            'name.unique'   => 'Категория с таким именем уже существует.',
         ];
     }
 }

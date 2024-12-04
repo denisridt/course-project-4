@@ -28,19 +28,58 @@ class ProductController extends Controller
 
     public function create(ProductCreateRequest $request)
     {
+        // Проверяем, существует ли продукт с таким же именем (для предотвращения дубликатов)
+        $existingProduct = Product::where('name', $request->input('name'))->first();
 
-        // Загрузка файла изображения
-        $imageName = time() . '.' . $request->photo->extension();
+        if ($existingProduct) {
+            return response()->json([
+                'error' => [
+                    'message' => 'Продукт с таким названием уже существует.',
+                    'code'    => 422,
+                    'product' => [
+                        'id'    => $existingProduct->id,
+                        'name'  => $existingProduct->name,
+                        'price' => $existingProduct->price,
+                    ],
+                ],
+            ], 422);
+        }
 
+        // Загрузка файла изображения (если есть)
+        $imagePath = null;
+        if ($request->hasFile('photo')) {
+            $imageName = time() . '.' . $request->photo->extension();
+            $imagePath = 'storage/images/products/' . $imageName;
+            $request->photo->move(public_path('storage/images/products/'), $imageName);
+        }
 
-        // Создание нового товара в базе данных
-        $products = new Product($request->all());
-        $products->photo = 'storage/images/products/' . $imageName; // Путь до загруженного изображения
-        $products->save();
-        $request->photo->move(public_path('storage/images/products/'), $imageName);
+        // Создание нового продукта
+        $product = Product::create([
+            'name'        => $request->input('name'),
+            'description' => $request->input('description'),
+            'price'       => $request->input('price'),
+            'quantity'    => $request->input('quantity'),
+            'photo'       => $imagePath,
+            'category_id' => $request->input('category_id'),
+        ]);
 
-        return response()->json(['message' => 'Товар успешно создан'], 201);
+        return response()->json([
+            'message' => 'Продукт успешно создан.',
+            'product' => [
+                'id'          => $product->id,
+                'name'        => $product->name,
+                'description' => $product->description,
+                'price'       => $product->price,
+                'quantity'    => $product->quantity,
+                'photo_url'   => $imagePath ? asset($imagePath) : null,
+                'category_id' => $product->category_id,
+                'created_at'  => $product->created_at->toDateTimeString(),
+            ],
+        ], 201);
     }
+
+
+
     public function destroy($id){
         $product = Product::find($id);
         if (!$product) {
@@ -53,29 +92,50 @@ class ProductController extends Controller
     public function update(ProductUpdateRequest $request, $id)
     {
         // Поиск продукта по id
-        $products = Product::find($id);
-        if (!$products) {
-            throw new ApiException('Товар не найден', 404);
+        $product = Product::find($id);
+        if (!$product) {
+            return response()->json([
+                'error' => [
+                    'code' => 404,
+                    'message' => 'Продукт с таким ID не найден.',
+                    'details' => 'Убедитесь, что вы указали правильный ID продукта.',
+                ]
+            ], 404);
         }
-        // Проверяем, есть ли продукт с таким именем уже в базе данных
-        $existingProduct = Product::where('name', $request->input('name'))->first();
-        if ($existingProduct) {
-            throw new ApiException('Продукт с таким именем уже существует', 422);
+
+        // Проверяем, есть ли продукт с таким названием уже в базе данных (если название изменено)
+        if ($request->has('name') && $request->input('name') !== $product->name) {
+            $existingProduct = Product::where('name', $request->input('name'))->first();
+            if ($existingProduct) {
+                return response()->json([
+                    'error' => [
+                        'code' => 422,
+                        'message' => 'Продукт с таким названием уже существует.',
+                        'details' => 'Пожалуйста, выберите уникальное название для продукта.',
+                    ]
+                ], 422);
+            }
         }
-        // Если файл был загружен, сохраняем его и обновляем путь к фото
+
+        // Обработка загруженного фото (если есть)
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
             $imageName = time() . '.' . $photo->getClientOriginalExtension();
 
+            // Сохранение изображения в папку
             $photo->storeAs('public/images/products', $imageName);
-            $products->photo =  'storage/images/products/' . $imageName;
+            $product->photo = 'storage/images/products/' . $imageName;
         }
-        $products->fill($request->except('photo'));
+
+        // Обновление других полей
+        $product->fill($request->except('photo'));
 
         // Сохранение изменений в базе данных
-        $products->save();
+        $product->save();
 
-        // Перенаправление на страницу продукта с сообщением об успехе
-        return response()->json(['message' => 'Продукт успешно обновлен'], 200);
+        return response()->json([
+            'message' => 'Продукт успешно обновлен.',
+            'product' => $product,
+        ], 200);
     }
 }
